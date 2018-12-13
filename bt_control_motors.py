@@ -65,6 +65,11 @@ print(gamepad)
 #defines full speed
 spdMax = 127
 
+#defines motor positions
+top = 1
+right = 2
+left = 3
+
 #creates motor winding functions
 #forwards
 def motorWind(mNum,speed):
@@ -103,35 +108,52 @@ def motorStop(nNum):
 for event in gamepad.read_loop():
 	if event.type == ecodes.EV_KEY:
 		if event.value == 1:
-            		if event.code == yBtn:
-                		print("Y")
-            		elif event.code == bBtn:
-                		print("B")
-            		elif event.code == aBtn:
-                		print("A")
-            		elif event.code == xBtn:
-                		print("X")
+            if event.code == yBtn:
+            	#Turn Left
+                print("Y")
+            elif event.code == bBtn:
+            	#Inch
+                print("B")
+            elif event.code == aBtn
+            	#Unwind
+                print("A")
+            elif event.code == xBtn:
+            	#Turn Right
+                print("X")
 
 	    		elif event.code == start:
+	    				#E-Stop
+	    				motorStop(top)
+	    				motorStop(right)
+	    				motorStop(left)
                 		print("start")
-            		elif event.code == select:
+            	elif event.code == select:
+            			#Motor Reset?
                 		print("select")
 
             		elif event.code == lTrig:
+            			#Rotate Contact Left
                 		print("left bumper")
             		elif event.code == rTrig:
+            			#Rotate Contact Right
              	 		print("right bumper")
    
 	elif event.type == ecodes.EV_ABS:    
     		if event.code == y:
 	    		if event.value == up:
-            			print("up")
+	    			#Lift
+            		print("up")
 	    		elif event.value == down:
+	    			#?????
 	        		print("down")
         	elif event.code == x:
-            		if event.value == left:
-                		print("left")
-            		elif event.value == right:
-                		print("right")
+            	if event.value == left:
+            		#Move Left
+                	print("left")
+            	elif event.value == right:
+            		#Move Right
+                	print("right")
+   else:
+   	   
 
 
