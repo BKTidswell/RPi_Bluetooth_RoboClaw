@@ -108,52 +108,79 @@ def motorStop(nNum):
 for event in gamepad.read_loop():
 	if event.type == ecodes.EV_KEY:
 		if event.value == 1:
-            if event.code == yBtn:
-            	#Turn Left
-                print("Y")
-            elif event.code == bBtn:
-            	#Inch
-                print("B")
-            elif event.code == aBtn
-            	#Unwind
-                print("A")
-            elif event.code == xBtn:
-            	#Turn Right
-                print("X")
+			if event.code == yBtn:
+				#Turn Left
+				motorUnwind(top,0.5)
+				motorUnwind(right,1)
+				motorWind(left,1)
+				print("Y")
+			elif event.code == bBtn:
+				#Inch
+				motorUnwind(top,1)
+				motorWind(right,1)
+				motorWind(left,1)
+				print("B")
+			elif event.code == aBtn
+				#Unwind
+				motorUnwind(top,0.5)
+				motorUnwind(right,0.5)
+				motorUnwind(left,0.5)
+				print("A")
+			elif event.code == xBtn:
+				#Turn Right
+				motorUnwind(top,0.5)
+				motorWind(right,1)
+				motorUnwind(left,1)
+				print("X")
 
-	    		elif event.code == start:
-	    				#E-Stop
-	    				motorStop(top)
-	    				motorStop(right)
-	    				motorStop(left)
-                		print("start")
-            	elif event.code == select:
-            			#Motor Reset?
-                		print("select")
+			elif event.code == start:
+				#E-Stop
+				motorStop(top)
+				motorStop(right)
+				motorStop(left)
+				print("start")
+			elif event.code == select:
+				#Motor Reset?
+				print("select")
 
-            		elif event.code == lTrig:
-            			#Rotate Contact Left
-                		print("left bumper")
-            		elif event.code == rTrig:
-            			#Rotate Contact Right
-             	 		print("right bumper")
+			elif event.code == lTrig:
+				#Rotate Contact Left (Counterclock)
+				temp = top
+				top = right
+				right = left
+				left = top
+				print("left bumper")
+
+			elif event.code == rTrig:
+				#Rotate Contact Right (Clock)
+				temp = top
+				top = left
+				left = right
+				right = temp
+				print("right bumper")
    
 	elif event.type == ecodes.EV_ABS:    
-    		if event.code == y:
-	    		if event.value == up:
-	    			#Lift
-            		print("up")
-	    		elif event.value == down:
-	    			#?????
-	        		print("down")
-        	elif event.code == x:
-            	if event.value == left:
-            		#Move Left
-                	print("left")
-            	elif event.value == right:
-            		#Move Right
-                	print("right")
-   else:
-   	   
+		if event.code == y:
+			if event.value == up:
+				#Lift
+				motorWind(top,1)
+				motorUnwind(right,1)
+				motorUnwind(left,1)
+				print("up")
+			elif event.value == down:
+				#?????
+				print("down")
+		elif event.code == x:
+			if event.value == left:
+				#Move Left
+				print("left")
+			elif event.value == right:
+				#Move Right
+				print("right")
+	else:
+		motorStop(top)
+		motorStop(right)
+		motorStop(left)
+	   
 
 
