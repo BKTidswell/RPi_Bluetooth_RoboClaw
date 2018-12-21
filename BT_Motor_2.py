@@ -63,7 +63,7 @@ right = 255
 print(gamepad)
 
 #defines full speed
-spdMax = 127
+spdMax = 63
 
 #defines motor positions
 top = 1
@@ -72,42 +72,30 @@ left = 3
 
 #creates motor winding functions
 #forwards
-def motorWind(mNum,speed):
+def motorControl(mNum,speed):
 	if mNum == 1:
-		rc1.ForwardM1(address,int(speed*spdMax))
+		rc1.ForwardBackwardM1(address,64+int(speed*spdMax))
 	elif mNum == 2:
-		rc1.ForwardM2(address,int(speed*spdMax))
+		rc1.ForwardBackwardM2(address,64+int(speed*spdMax))
 	elif mNum == 3:
 		#rc2.ForwardM1(address,speed*spdMax)
 		pass
 	else:
 		print("Incorrect Motor Number")
 
-#backwards
-def motorUnwind(mNum,speed):
-	if mNum == 1:
-		rc1.BackwardM1(address,int(speed*spdMax))
-	elif mNum == 2:
-		rc1.BackwardM2(address,int(speed*spdMax))
-	elif mNum == 3:
-		#rc2.BackwardM1(address,speed*spdMax)
-		pass
-	else:
-		print("Incorrect Motor Number")
-
-#stopped
-def motorStop(mNum):
-	if mNum == 1:
-		rc1.ForwardM1(address,0)
-	elif mNum == 2:
-		rc1.ForwardM2(address,0)
-	elif mNum == 3:
-		#rc2.ForwardM1(address,0)
-		pass
-	else:
-		print("Incorrect Motor Number")
-
 #loop and filter by event code and print the mapped label
+
+aBtn = 304
+bBtn = 305
+xBtn = 307
+yBtn = 308
+
+start = 315
+select = 314
+
+lTrig = 310
+rTrig = 311
+
 
 try:
 	for event in gamepad.read_loop():

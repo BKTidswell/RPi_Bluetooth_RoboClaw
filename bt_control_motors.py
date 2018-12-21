@@ -3,7 +3,7 @@ from roboclaw import Roboclaw
 from evdev import InputDevice, categorize, ecodes
 
 #Controller Specifications
-# D-pad:
+# D-pad: 
 #	Right = Right
 #	Down = ?????
 #	Left = Left
@@ -169,8 +169,6 @@ try:
 				if event.value == up:
 					#Lift
 					motorWind(top,1)
-					motorUnwind(right,1)
-					motorUnwind(left,1)
 					print("up")
 				elif event.value == down:
 					#?????
@@ -178,9 +176,11 @@ try:
 			elif event.code == x:
 				if event.value == left:
 					#Move Left
+					motorWind(left,1)
 					print("left")
 				elif event.value == right:
 					#Move Right
+					motorWind(right,1)
 					print("right")
 		#else:
 		#	time.sleep(0.1)
