@@ -5,7 +5,7 @@ from evdev import InputDevice, categorize, ecodes
 #Controller Specifications
 # D-pad: 
 #	Right = Right
-#	Down = ?????
+#	Down = Toggle Control Mode
 #	Left = Left
 #	Up = Lift
 # Buttons:

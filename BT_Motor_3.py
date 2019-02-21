@@ -37,8 +37,8 @@ while(not gamepadConnect):
 
 #Opens up roboclaw inputs
 
-rc1 = Roboclaw("/dev/ttyACM0",9600)
-rc2 = Roboclaw("/dev/ttyACM1",9600)
+rc1 = Roboclaw("/dev/ttyACM1",9600)
+rc2 = Roboclaw("/dev/ttyACM0",9600)
 
 rc1.Open()
 rc2.Open()
@@ -87,12 +87,12 @@ constRun = True #Will not change
 revRun = False
 sleepTime = 0.5
 
-#creates motor winding functions
-#forwards
-
 topDir = -1
 rightDir = -1
 leftDir = -1
+
+#creates motor winding functions
+#forwards
 
 def motorControl(mNum,speed):
 	if mNum == 1:
@@ -135,8 +135,8 @@ try:
 					stopAll()
 					#print("start")
 				elif event.code == select:
-					#Motor Reset?
 					pass
+					#Motor Reset?
 					#print("select")
 				elif event.code == lTrig:
 					#Rotate Contact Left (Counterclock)
@@ -154,21 +154,27 @@ try:
 					#print("right bumper")
 				elif event.code == yBtn:
 					#Turn Left
-					motorControl(topM,topDir*0.5)
-					motorControl(rightM,rightDir*1)
+					motorControl(topM,topDir*1)
+					time.sleep(sleepTime*3)
+					motorControl(leftM,leftDir*1)
+					time.sleep(sleepTime*3)
+					motorControl(topM,topDir*-1)
+					time.sleep(sleepTime*4)
 					motorControl(leftM,leftDir*-1)
+					time.sleep(sleepTime*4)
 					lastPressed = "Y"
 					#print("Y")
 				elif event.code == bBtn:
 					#Inch
+					motorControl(topM,topDir*-1)
+					motorControl(rightM,rightDir*1)
+					motorControl(leftM,leftDir*1)
+					time.sleep(sleepTime*7)
 					motorControl(topM,topDir*1)
 					motorControl(rightM,rightDir*-1)
 					motorControl(leftM,leftDir*-1)
+					time.sleep(sleepTime*6)
 					lastPressed = "B"
-					time.sleep(sleepTime)
-					motorControl(topM,topDir*-0.5)
-					motorControl(rightM,rightDir*1)
-					motorControl(leftM,leftDir*1)
 					#print("B")
 				elif event.code == aBtn:
 					pass
@@ -186,10 +192,10 @@ try:
 					lastPressed = "X"
 					#print("X")
 					
-		#if event.value == 0 and event.code in buttonDict.keys() and not constRun:
-		#	if lastPressed == buttonDict[event.code]:
-		#		lastPressed = "None"
-		#		stopAll()
+		if event.value == 0 and event.code in buttonDict.keys() and not constRun:
+			if lastPressed == buttonDict[event.code]:
+				lastPressed = "None"
+				stopAll()
 				
 		elif event.type == ecodes.EV_ABS:    
 			if event.code == y:
@@ -200,7 +206,7 @@ try:
 					else:
 						motorControl(topM,topDir*-1)
 					lastPressed = "up"
-					print("up")
+					#print("up")
 				elif event.value == down:
 					revRun = not revRun
 					if revRun:
