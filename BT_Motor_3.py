@@ -1,7 +1,10 @@
 import time
 from roboclaw import Roboclaw
 from evdev import InputDevice, categorize, ecodes
+import fnmatch
+import os
 
+#
 #Controller Specifications
 # D-pad:
 #	Right = Right
@@ -24,6 +27,24 @@ from evdev import InputDevice, categorize, ecodes
 #   /   \
 #  3 ___ 2
 
+rc1Num = 0
+rc2Num = 1
+
+# Strings for motor connection
+driverFiles = []
+
+for file in os.listdir('/dev/'):
+	 if fnmatch.fnmatch(file,'ttyACM*'):
+		driverFiles.append("/dev/"+file)
+
+rc1Address = driverFiles[rc1Num]
+rc2Address = driverFiles[rc2Num]
+
+print(rc1Address)
+print(rc2Address)
+
+#rc1Address = '/dev/ttyACM0'
+#rc2Address = '/dev/ttyACM1'
 
 #creates object 'gamepad' to store the data
 gamepadConnect = False
@@ -37,8 +58,8 @@ while(not gamepadConnect):
 
 #Opens up roboclaw inputs
 
-rc1 = Roboclaw("/dev/ttyACM1",9600)
-rc2 = Roboclaw("/dev/ttyACM0",9600)
+rc1 = Roboclaw(rc1Address,9600)
+rc2 = Roboclaw(rc2Address,9600)
 
 rc1.Open()
 rc2.Open()
@@ -87,20 +108,20 @@ constRun = True #Will not change
 revRun = False
 sleepTime = 0.5
 
-topDir = -1
-rightDir = -1
-leftDir = -1
+M1Dir = 1
+M2Dir = -1
+M3Dir = 1
 
 #creates motor winding functions
 #forwards
 
 def motorControl(mNum,speed):
 	if mNum == 1:
-		rc1.ForwardBackwardM1(address,64+int(speed*spdMax))
+		rc1.ForwardBackwardM1(address,64+int(speed*spdMax*M1Dir))
 	elif mNum == 2:
-		rc1.ForwardBackwardM2(address,64+int(speed*spdMax))
+		rc1.ForwardBackwardM2(address,64+int(speed*spdMax*M2Dir))
 	elif mNum == 3:
-		rc2.ForwardBackwardM1(address,64+int(speed*spdMax))
+		rc2.ForwardBackwardM1(address,64+int(speed*spdMax*M3Dir))
 	else:
 		print("Incorrect Motor Number")
 
@@ -113,9 +134,18 @@ motorsConnect = False
 
 while(not motorsConnect):
 	try:
+		driverFiles = []
+
+		for file in os.listdir('/dev/'): 
+         		if fnmatch.fnmatch(file,'ttyACM*'):
+                		driverFiles.append("/dev/"+file)
+
+		rc1Address = driverFiles[rc1Num]
+		rc2Address = driverFiles[rc2Num]
+
 		#Opens up roboclaw inputs
-		rc1 = Roboclaw("/dev/ttyACM1",9600)
-		rc2 = Roboclaw("/dev/ttyACM0",9600)
+		rc1 = Roboclaw(rc1Address,9600)
+		rc2 = Roboclaw(rc2Address,9600)
 
 		rc1.Open()
 		rc2.Open()
@@ -154,41 +184,51 @@ try:
 					#print("right bumper")
 				elif event.code == yBtn:
 					#Turn Left
-					motorControl(topM,topDir*1)
+					motorControl(topM,1)
 					time.sleep(sleepTime*3)
-					motorControl(leftM,leftDir*1)
+					motorControl(leftM,1)
 					time.sleep(sleepTime*3)
-					motorControl(topM,topDir*-1)
+					motorControl(topM,-1)
 					time.sleep(sleepTime*4)
-					motorControl(leftM,leftDir*-1)
+					motorControl(leftM,-1)
 					time.sleep(sleepTime*4)
 					lastPressed = "Y"
 					#print("Y")
 				elif event.code == bBtn:
 					#Inch
-					motorControl(topM,topDir*-1)
-					motorControl(rightM,rightDir*1)
-					motorControl(leftM,leftDir*1)
-					time.sleep(sleepTime*7)
-					motorControl(topM,topDir*1)
-					motorControl(rightM,rightDir*-1)
-					motorControl(leftM,leftDir*-1)
-					time.sleep(sleepTime*6)
+					#motorControl(topM,-1)
+					motorControl(rightM,1)
+					motorControl(leftM,1)
+					time.sleep(sleepTime*4)
+					#motorControl(topM,1)
+					motorControl(rightM,-1)
+					motorControl(leftM,-1)
+					time.sleep(sleepTime*2.5)
 					lastPressed = "B"
 					#print("B")
 				elif event.code == aBtn:
-					pass
-					#Unwind
-					#motorControl(topM,topDir*0.5)
-					#motorControl(rightM,rightDir*0.5)
-					#motorControl(leftM,leftDir*0.5)
-					#lastPressed = "A"
+					#Crunch
+					if not revRun:
+						motorControl(topM,1)
+						motorControl(rightM,1)
+						motorControl(leftM,1)
+					else:
+						motorControl(topM,-1)
+						motorControl(rightM,-1)
+						motorControl(leftM,-1)
+					time.sleep(sleepTime*1)
+					lastPressed = "A"
 					#print("A")
 				elif event.code == xBtn:
 					#Turn Right
-					motorControl(topM,topDir*0.5)
-					motorControl(rightM,rightDir*-1)
-					motorControl(leftM,leftDir*-1)
+					motorControl(topM,1)
+					time.sleep(sleepTime*2)
+					motorControl(rightM,1)
+					time.sleep(sleepTime*2)
+					motorControl(topM,-1)
+					time.sleep(sleepTime*2)
+					motorControl(rightM,-1)
+					time.sleep(sleepTime*2)
 					lastPressed = "X"
 					#print("X")
 					
@@ -202,9 +242,9 @@ try:
 				if event.value == up:
 					#Lift
 					if not revRun:
-						motorControl(topM,topDir*1)
+						motorControl(topM,1)
 					else:
-						motorControl(topM,topDir*-1)
+						motorControl(topM,-1)
 					lastPressed = "up"
 					#print("up")
 				elif event.value == down:
@@ -219,17 +259,17 @@ try:
 				if event.value == left:
 					#Move Left
 					if not revRun:
-						motorControl(leftM,leftDir*1)
+						motorControl(leftM,1)
 					else:
-						motorControl(leftM,leftDir*-1)
+						motorControl(leftM,-1)
 					lastPressed = "left"
 					#print("left")
 				elif event.value == right:
 					#Move Right
 					if not revRun:
-						motorControl(rightM,rightDir*1)
+						motorControl(rightM,1)
 					else:
-						motorControl(rightM,rightDir*-1)
+						motorControl(rightM,-1)
 					lastPressed = "right"
 					#print("right")
 				elif event.value == middle:
