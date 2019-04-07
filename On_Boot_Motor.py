@@ -1,8 +1,11 @@
+#!/usr/bin/python -u
+
 import time
 from roboclaw import Roboclaw
 from evdev import InputDevice, categorize, ecodes
 import fnmatch
 import os
+from datetime import datetime
 
 #
 #Controller Specifications
@@ -23,11 +26,14 @@ import os
 #	Left = Rotate Contact Left
 
 # Motor Diagram
-#     1
-#   /   \
+#	  1
+#	/	\
 #  3 ___ 2
 
-f.open("/home/pi/Desktop/Output.txt","w")
+now = datetime.now()
+minute = now.strftime("%M")
+outFile  = "/home/pi/Desktop/Output"+minute+".txt"
+f = open(outFile,"w")
 
 gamepadConnect = False
 while(not gamepadConnect):
@@ -35,7 +41,7 @@ while(not gamepadConnect):
 		gamepad = InputDevice('/dev/input/event0')
 		gamepadConnect = True
 	except:
-		f.write("No Gamepad Connected. Please turn it on!")
+		f.write("No Gamepad Connected. Please turn it on! \n")
 		time.sleep(0.5)
 
 f.close()
@@ -84,14 +90,13 @@ M2Dir = -1
 M3Dir = 1
 
 while(True):
-	f.open("/home/pi/Desktop/Output.txt","a")
+	f = open(outFile,"a")
 	try:
 		for event in gamepad.read_loop():
 			if event.type == ecodes.EV_KEY:
 				if event.value == 1:
 					if event.code == start:
 						#E-Stop
-						stopAll()
 						f.write("start")
 					elif event.code == select:
 						#Motor Reset?
@@ -130,53 +135,39 @@ while(True):
 			if event.value == 0 and event.code in buttonDict.keys() and not constRun:
 				if lastPressed == buttonDict[event.code]:
 					lastPressed = "None"
-					stopAll()
 					
-			elif event.type == ecodes.EV_ABS:    
+			elif event.type == ecodes.EV_ABS:	 
 				if event.code == y:
 					if event.value == up:
 						#Lift
-						if not revRun:
-							motorControl(topM,1)
-						else:
-							motorControl(topM,-1)
 						lastPressed = "up"
 						f.write("up")
 					elif event.value == down:
-						revRun = not revRun
-						if revRun:
-							f.write("Motors Unwinding")
-						else:
-							f.write("Motors Winding")
+						f.write("down")
 					elif event.value == middle:
-						stopAll()
+						pass
 				elif event.code == x:	
 					if event.value == left:
-						#Move Left
-						if not revRun:
-							motorControl(leftM,1)
-						else:
-							motorControl(leftM,-1)
 						lastPressed = "left"
 						f.write("left")
 					elif event.value == right:
-						#Move Right
-						if not revRun:
-							motorControl(rightM,1)
-						else:
-							motorControl(rightM,-1)
 						lastPressed = "right"
 						f.write("right")
 					elif event.value == middle:
-						stopAll()
-			
+						pass
+					
 			if lastPressed not in ["None","up","left","right"]:
 				lastPressed = "None"
-				stopAll()
-	f.close()
 				
-except KeyboardInterrupt:          # trap a CTRL+C keyboard interrupt  
-	stopAll()
+	except KeyboardInterrupt:		   # trap a CTRL+C keyboard interrupt  
+		break
+		
+	finally:
+		f.write(":( /n")
+		
+	f.flush()
+	f.close()
+	sys.stdout.flush()
 	   
 
 

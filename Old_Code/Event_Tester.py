@@ -30,35 +30,6 @@ import os
 rc1Num = 0
 rc2Num = 1
 
-# Strings for motor connection
-motorsConnect = False
-
-while(not motorsConnect):
-	try:
-		driverFiles = []
-
-		for file in os.listdir('/dev/'): 
-         		if fnmatch.fnmatch(file,'ttyACM*'):
-                		driverFiles.append("/dev/"+file)
-
-		rc1Address = driverFiles[rc1Num]
-		rc2Address = driverFiles[rc2Num]
-
-		#Opens up roboclaw inputs
-		rc1 = Roboclaw(rc1Address,9600)
-		rc2 = Roboclaw(rc2Address,9600)
-
-		rc1.Open()
-		rc2.Open()
-
-		motorsConnect = True
-	except:
-		print("Connect Both Motor Drivers")
-		time.sleep(0.5)
-
-print(rc1Address)
-print(rc2Address)
-
 #rc1Address = '/dev/ttyACM0'
 #rc2Address = '/dev/ttyACM1'
 
@@ -73,12 +44,6 @@ while(not gamepadConnect):
 		time.sleep(0.5)
 
 #Opens up roboclaw inputs
-
-rc1 = Roboclaw(rc1Address,9600)
-rc2 = Roboclaw(rc2Address,9600)
-
-rc1.Open()
-rc2.Open()
 
 address = 0x80
 
@@ -131,21 +96,6 @@ M3Dir = 1
 #creates motor winding functions
 #forwards
 
-def motorControl(mNum,speed):
-	if mNum == 1:
-		rc1.ForwardBackwardM1(address,64+int(speed*spdMax*M1Dir))
-	elif mNum == 2:
-		rc1.ForwardBackwardM2(address,64+int(speed*spdMax*M2Dir))
-	elif mNum == 3:
-		rc2.ForwardBackwardM1(address,64+int(speed*spdMax*M3Dir))
-	else:
-		print("Incorrect Motor Number")
-
-def stopAll():
-	motorControl(topM,0)
-	motorControl(rightM,0)
-	motorControl(leftM,0)
-
 def rotateRight(topM,rightM,leftM):
 	tempM = topM
 	topM = rightM
@@ -166,14 +116,11 @@ def flushLoop():
 
 allowRotate = False
 
-try:
+try:	
 	for event in gamepad.read_loop():
 		if event.type == ecodes.EV_KEY:
 			if event.value == 1:
-				if event.code == start:
-					#E-Stop
-					stopAll()
-				elif event.code == select:
+				if event.code == select:
 					allowRotate = not allowRotate 
 					#Motor Reset?
 				elif event.code == lTrig:
@@ -191,37 +138,21 @@ try:
 					if not revRun:
 						pass
 					else:
-						motorControl(rightM,1)
+						print("Y")
 						time.sleep(sleepTime*3)
-						motorControl(leftM,1)
-						time.sleep(sleepTime*3)
-						motorControl(rightM,-1)
-						time.sleep(sleepTime*4)
-						motorControl(leftM,-1)
-						time.sleep(sleepTime*4)
 						(topM,rightM,leftM) = rotateRight(topM,rightM,leftM)
 					lastPressed = "Y"
 				elif event.code == bBtn:
 					#Inch
-					#motorControl(topM,-1)
-					motorControl(rightM,1)
-					motorControl(leftM,1)
-					time.sleep(sleepTime*4)
-					#motorControl(topM,1)
-					motorControl(rightM,-1)
-					motorControl(leftM,-1)
+					print("B")
 					time.sleep(sleepTime*3)
 					lastPressed = "B"
 				elif event.code == aBtn:
 					#Crunch
 					if not revRun:
-						motorControl(topM,1)
-						motorControl(rightM,1)
-						motorControl(leftM,1)
+						print("A+")
 					else:
-						motorControl(topM,-1)
-						motorControl(rightM,-1)
-						motorControl(leftM,-1)
+						print("A-")
 					time.sleep(sleepTime*1)
 					lastPressed = "A"
 				elif event.code == xBtn:
@@ -229,13 +160,7 @@ try:
 					if not revRun:
 						pass
 					else:
-						motorControl(leftM,1)
-						time.sleep(sleepTime*3)
-						motorControl(rightM,1)
-						time.sleep(sleepTime*3)
-						motorControl(leftM,-1)
-						time.sleep(sleepTime*4)
-						motorControl(rightM,-1)
+						print("X")
 						time.sleep(sleepTime*4)
 						(topM,rightM,leftM) = rotateLeft(topM,rightM,leftM)
 					lastPressed = "X"
@@ -249,10 +174,7 @@ try:
 			if event.code == y:
 				if event.value == up:
 					#Lift
-					if not revRun:
-						motorControl(topM,1)
-					else:
-						motorControl(topM,-1)
+					print("Up")
 					lastPressed = "up"
 				elif event.value == down:
 					revRun = not revRun
@@ -260,35 +182,23 @@ try:
 						print("Motors Unwinding")
 					else:
 						print("Motors Winding")
-				elif event.value == middle:
-					stopAll()
 			elif event.code == x:	
 				if event.value == left:
 					#Move Left
-					if not revRun:
-						motorControl(leftM,1)
-					else:
-						motorControl(leftM,-1)
+					print("Left")
 					lastPressed = "left"
 				elif event.value == right:
 					#Move Right
-					if not revRun:
-						motorControl(rightM,1)
-					else:
-						motorControl(rightM,-1)
+					print("Right")
 					lastPressed = "right"
-				elif event.value == middle:
-					stopAll()
 		
 		if lastPressed not in ["None","up","left","right"]:
 			lastPressed = "None"
 			time.sleep(sleepTime)
-			stopAll()
-			
+		
 		flushLoop()
 			
 except KeyboardInterrupt:          # trap a CTRL+C keyboard interrupt  
-	stopAll()
-	   
+	pass	   
 
 
