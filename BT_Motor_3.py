@@ -1,4 +1,4 @@
-import time
+import time, threading
 from roboclaw import Roboclaw
 from evdev import InputDevice, categorize, ecodes
 import fnmatch
@@ -163,8 +163,12 @@ def rotateLeft(topM,rightM,leftM):
 def flushLoop():
 	while gamepad.read_one() != None:
 			pass
+		
+def current_milli_time():
+	return int(round(time.time() * 1000))
 
 allowRotate = False
+tTime = 1
 
 try:
 	for event in gamepad.read_loop():
@@ -210,7 +214,7 @@ try:
 					#motorControl(topM,1)
 					motorControl(rightM,-1)
 					motorControl(leftM,-1)
-					time.sleep(sleepTime*3)
+					time.sleep(sleepTime*2.6)
 					lastPressed = "B"
 				elif event.code == aBtn:
 					#Crunch
@@ -218,11 +222,12 @@ try:
 						motorControl(topM,1)
 						motorControl(rightM,1)
 						motorControl(leftM,1)
+						time.sleep(sleepTime*1)
 					else:
 						motorControl(topM,-1)
 						motorControl(rightM,-1)
 						motorControl(leftM,-1)
-					time.sleep(sleepTime*1)
+						time.sleep(sleepTime*0.88)
 					lastPressed = "A"
 				elif event.code == xBtn:
 					#Turn Right
@@ -254,6 +259,8 @@ try:
 					else:
 						motorControl(topM,-1)
 					lastPressed = "up"
+					t = threading.Timer(tTime,stopAll)
+					t.start()
 				elif event.value == down:
 					revRun = not revRun
 					if revRun:
@@ -262,6 +269,7 @@ try:
 						print("Motors Winding")
 				elif event.value == middle:
 					stopAll()
+					t.cancel()
 			elif event.code == x:	
 				if event.value == left:
 					#Move Left
@@ -270,6 +278,8 @@ try:
 					else:
 						motorControl(leftM,-1)
 					lastPressed = "left"
+					t = threading.Timer(tTime,stopAll)
+					t.start()
 				elif event.value == right:
 					#Move Right
 					if not revRun:
@@ -277,8 +287,11 @@ try:
 					else:
 						motorControl(rightM,-1)
 					lastPressed = "right"
+					t = threading.Timer(tTime,stopAll)
+					t.start()
 				elif event.value == middle:
 					stopAll()
+					t.cancel()
 		
 		if lastPressed not in ["None","up","left","right"]:
 			lastPressed = "None"
