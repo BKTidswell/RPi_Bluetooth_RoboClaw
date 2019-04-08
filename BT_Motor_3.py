@@ -3,6 +3,7 @@ from roboclaw import Roboclaw
 from evdev import InputDevice, categorize, ecodes
 import fnmatch
 import os
+import RPi.GPIO as GPIO
 
 #
 #Controller Specifications
@@ -127,6 +128,11 @@ sleepTime = 0.5
 M1Dir = 1
 M2Dir = -1
 M3Dir = 1
+
+#Sets up LED
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(14,GPIO.OUT)
+GPIO.output(14,GPIO.HIGH)
 
 #creates motor winding functions
 #forwards
@@ -265,7 +271,9 @@ try:
 					revRun = not revRun
 					if revRun:
 						print("Motors Unwinding")
+						GPIO.output(14,GPIO.LOW)
 					else:
+						GPIO.out(14,GPIO.HIGH)
 						print("Motors Winding")
 				elif event.value == middle:
 					stopAll()
