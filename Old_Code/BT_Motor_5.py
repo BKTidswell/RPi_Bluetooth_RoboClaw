@@ -1,8 +1,5 @@
-import time, threading
-from roboclaw import Roboclaw
+import time #, threading
 from evdev import InputDevice, categorize, ecodes
-import fnmatch
-import os
 import RPi.GPIO as GPIO
 
 #
@@ -24,44 +21,12 @@ import RPi.GPIO as GPIO
 #	Left = Rotate Contact Left
 
 # Motor Diagram
-#     1
+#     0
 #   /   \
-#  3 ___ 2
-
-rc1Num = 0
-rc2Num = 1
+#  2 ___ 1
 
 # Strings for motor connection
 motorsConnect = False
-
-while(not motorsConnect):
-	try:
-		driverFiles = []
-
-		for file in os.listdir('/dev/'): 
-         		if fnmatch.fnmatch(file,'ttyACM*'):
-                		driverFiles.append("/dev/"+file)
-
-		rc1Address = driverFiles[rc1Num]
-		rc2Address = driverFiles[rc2Num]
-
-		#Opens up roboclaw inputs
-		rc1 = Roboclaw(rc1Address,9600)
-		rc2 = Roboclaw(rc2Address,9600)
-
-		rc1.Open()
-		rc2.Open()
-
-		motorsConnect = True
-	except:
-		print("Connect Both Motor Drivers")
-		time.sleep(0.5)
-
-print(rc1Address)
-print(rc2Address)
-
-#rc1Address = '/dev/ttyACM0'
-#rc2Address = '/dev/ttyACM1'
 
 #creates object 'gamepad' to store the data
 gamepadConnect = False
@@ -73,15 +38,29 @@ while(not gamepadConnect):
 		print("No Gamepad Connected. Please turn it on!")
 		time.sleep(0.5)
 
-#Opens up roboclaw inputs
+#sets up motor driver pins
+GPIO.setwarnings(False)
+GPIO.setmode(GPIO.BOARD)
+numMotors = 3
+IN1PINS = [18,12,23] #[8,12,18]
+IN2PINS = [22,16,26] #[10,16,22]
 
-rc1 = Roboclaw(rc1Address,9600)
-rc2 = Roboclaw(rc2Address,9600)
+#Makes the PMW references
+IN1PWMS = [None for x in range(numMotors)]
+IN2PWMS = [None for x in range(numMotors)]
 
-rc1.Open()
-rc2.Open()
-
-address = 0x80
+#Starts all PWM at 0
+for i in range(numMotors):
+	pin = IN1PINS[i]
+	GPIO.setup(pin,GPIO.OUT)
+	IN1PWMS[i] = GPIO.PWM(pin,100)
+	IN1PWMS[i].start(0)
+	
+for i in range(numMotors):
+	pin = IN2PINS[i]
+	GPIO.setup(pin,GPIO.OUT)
+	IN2PWMS[i] = GPIO.PWM(pin,100)
+	IN2PWMS[i].start(0)
 
 #button code variables as found for 8bitdo gamepad
 aBtn = 304
@@ -110,55 +89,57 @@ middle = 127
 print(gamepad)
 
 #defines full speed
-spdMax = 63
+#spdMax = 63
+spdMax = 100 #32000
 
 #defines motor positions
-topM = 3
+topM = 0
 rightM = 1
 leftM = 2
+
+MDirs = [1,1,1]
 
 #Used for hold-to-use motor control
 lastPressed = "None"
 buttonDict = {yBtn:"Y",aBtn:"A",bBtn:"B",xBtn:"X"}
 
 constRun = True #Will not change
+allowRotate = False
 revRun = False
+
 sleepTime = 0.5
-
-M1Dir = 1
-M2Dir = -1
-M3Dir = 1
-
-#Sets up LED
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(14,GPIO.OUT)
-GPIO.output(14,GPIO.HIGH)
+tTime = 0.5
 
 #creates motor winding functions
-#forwards
-
 def motorControl(mNum,speed):
-	if mNum == 1:
-		rc1.ForwardBackwardM1(address,64+int(speed*spdMax*M1Dir))
-	elif mNum == 2:
-		rc1.ForwardBackwardM2(address,64+int(speed*spdMax*M2Dir))
-	elif mNum == 3:
-		rc2.ForwardBackwardM1(address,64+int(speed*spdMax*M3Dir))
+	if speed*MDirs[mNum] >= 0:
+		IN1PWMS[mNum].ChangeDutyCycle(int(speed*spdMax*MDirs[mNum]))
+		IN2PWMS[mNum].ChangeDutyCycle(0)
 	else:
-		print("Incorrect Motor Number")
+		IN1PWMS[mNum].ChangeDutyCycle(0)
+		IN2PWMS[mNum].ChangeDutyCycle(int(abs(speed*spdMax*MDirs[mNum])))
 
+#Allows easier running of longer patterns
+def runMotorPattern(motors,speeds,delays):
+	for i in range(len(motors)):
+		motorControl(motors[i],speeds[i])
+		time.sleep(sleepTime*delays[i])
+
+#stops all motors
 def stopAll():
 	motorControl(topM,0)
 	motorControl(rightM,0)
 	motorControl(leftM,0)
 
+#Changes the direction of the motors to the right
 def rotateRight(topM,rightM,leftM):
 	tempM = topM
 	topM = rightM
 	rightM = leftM
 	leftM = tempM
 	return(topM,rightM,leftM)
-	
+
+#Changes the direction of the motors to the left
 def rotateLeft(topM,rightM,leftM):
 	tempM = topM
 	topM = leftM
@@ -173,9 +154,6 @@ def flushLoop():
 def current_milli_time():
 	return int(round(time.time() * 1000))
 
-allowRotate = False
-tTime = 1
-
 try:
 	for event in gamepad.read_loop():
 		if event.type == ecodes.EV_KEY:
@@ -183,73 +161,49 @@ try:
 				if event.code == start:
 					#E-Stop
 					stopAll()
+					print("Start")
 				elif event.code == select:
 					allowRotate = not allowRotate 
 					#Motor Reset?
+					print("Select")
 				elif event.code == lTrig:
 					#Rotate Contact Left (Counterclock)
 					if allowRotate:
 						(topM,rightM,leftM) = rotateLeft(topM,rightM,leftM)
 						allowRotate = False
+					print("Left Trigger")
 				elif event.code == rTrig:
 					#Rotate Contact Right (Clock)
 					if allowRotate:
 						(topM,rightM,leftM) = rotateRight(topM,rightM,leftM)
 						allowRotate = False
+					print("Right Trigger")
 				elif event.code == yBtn:
 					#Turn Left
-					if not revRun:
-						pass
-					else:
-						motorControl(rightM,1)
-						time.sleep(sleepTime*3)
-						motorControl(leftM,1)
-						time.sleep(sleepTime*3)
-						motorControl(rightM,-1)
-						time.sleep(sleepTime*4)
-						motorControl(leftM,-1)
-						time.sleep(sleepTime*4)
-						(topM,rightM,leftM) = rotateRight(topM,rightM,leftM)
+					runMotorPattern([rightM,leftM,rightM,leftM],[1,1,-1,-1],[3,3,1,2])
+					(topM,rightM,leftM) = rotateRight(topM,rightM,leftM)
+					print("Y")
 					lastPressed = "Y"
+				elif event.code == xBtn:
+					#Turn Right
+					runMotorPattern([leftM,rightM,leftM,rightM],[1,1,-1,-1],[3,3,1,2])
+					(topM,rightM,leftM) = rotateLeft(topM,rightM,leftM)
+					print("X")
+					lastPressed = "X"
 				elif event.code == bBtn:
 					#Inch
-					#motorControl(topM,-1)
-					motorControl(rightM,1)
-					motorControl(leftM,1)
-					time.sleep(sleepTime*4)
-					#motorControl(topM,1)
-					motorControl(rightM,-1)
-					motorControl(leftM,-1)
-					time.sleep(sleepTime*2.6)
+					runMotorPattern([rightM,leftM,rightM,leftM],[1,1,-1,-1],[0,3,0,1.25])
+					print("B")
 					lastPressed = "B"
 				elif event.code == aBtn:
 					#Crunch
 					if not revRun:
-						motorControl(topM,1)
-						motorControl(rightM,1)
-						motorControl(leftM,1)
-						time.sleep(sleepTime*1)
+						runMotorPattern([topM,rightM,leftM],[1,1,1],[0,0,1])
 					else:
-						motorControl(topM,-1)
-						motorControl(rightM,-1)
-						motorControl(leftM,-1)
-						time.sleep(sleepTime*0.88)
+						runMotorPattern([topM,rightM,leftM],[-1,-1,-1],[0,0,0.75])
+					print("A")
 					lastPressed = "A"
-				elif event.code == xBtn:
-					#Turn Right
-					if not revRun:
-						pass
-					else:
-						motorControl(leftM,1)
-						time.sleep(sleepTime*3)
-						motorControl(rightM,1)
-						time.sleep(sleepTime*3)
-						motorControl(leftM,-1)
-						time.sleep(sleepTime*4)
-						motorControl(rightM,-1)
-						time.sleep(sleepTime*4)
-						(topM,rightM,leftM) = rotateLeft(topM,rightM,leftM)
-					lastPressed = "X"
+
 					
 		if event.value == 0 and event.code in buttonDict.keys() and not constRun:
 			if lastPressed == buttonDict[event.code]:
@@ -265,19 +219,15 @@ try:
 					else:
 						motorControl(topM,-1)
 					lastPressed = "up"
-					t = threading.Timer(tTime,stopAll)
-					t.start()
+					print("Up")
 				elif event.value == down:
 					revRun = not revRun
 					if revRun:
 						print("Motors Unwinding")
-						GPIO.output(14,GPIO.LOW)
 					else:
-						GPIO.out(14,GPIO.HIGH)
 						print("Motors Winding")
 				elif event.value == middle:
 					stopAll()
-					t.cancel()
 			elif event.code == x:	
 				if event.value == left:
 					#Move Left
@@ -286,8 +236,7 @@ try:
 					else:
 						motorControl(leftM,-1)
 					lastPressed = "left"
-					t = threading.Timer(tTime,stopAll)
-					t.start()
+					print("Left")
 				elif event.value == right:
 					#Move Right
 					if not revRun:
@@ -295,11 +244,9 @@ try:
 					else:
 						motorControl(rightM,-1)
 					lastPressed = "right"
-					t = threading.Timer(tTime,stopAll)
-					t.start()
+					print("Right")
 				elif event.value == middle:
 					stopAll()
-					t.cancel()
 		
 		if lastPressed not in ["None","up","left","right"]:
 			lastPressed = "None"
@@ -310,6 +257,3 @@ try:
 			
 except KeyboardInterrupt:          # trap a CTRL+C keyboard interrupt  
 	stopAll()
-	   
-
-

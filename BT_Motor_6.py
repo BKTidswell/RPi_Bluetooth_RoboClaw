@@ -38,15 +38,17 @@ ORDER = neopixel.RGB
 pixels = neopixel.NeoPixel(pixel_pin, num_pixels, brightness=0.5,auto_write=False, pixel_order=ORDER)
 num_pixels = 12
 
-#creates object 'gamepad' to store the data
-gamepadConnect = False
-while(not gamepadConnect):
-	try:
-		gamepad = InputDevice('/dev/input/event0')
-		gamepadConnect = True
-	except:
-		print("No Gamepad Connected. Please turn it on!")
-		time.sleep(0.5)
+#NeoPixel Pins
+pinSections = [[0,1,2,3],[4,5,6,7],[8,9,10,11]]
+
+#neoPixel Colors
+RED = (0,255,0)
+YELLOW = (255,255,0)
+GREEN = (255,0,0)
+BLUE = (0,0,255)
+
+colorSets = [[RED,YELLOW,YELLOW],[BLUE,GREEN,GREEN]]
+cDir = 0
 
 #sets up motor driver pins
 GPIO.setwarnings(False)
@@ -94,9 +96,6 @@ down = 255
 left = 0
 right = 255
 middle = 127
-
-#prints out device info at start
-print(gamepad)
 
 #defines full speed
 #spdMax = 63
@@ -168,7 +167,28 @@ def light_all(r,g,b):
 	pixels.fill((r,g,b))
 	pixels.show()
 
-light_all(255,0,0)
+def pixelSections(sections,colors):
+	for i in range(3):
+		s = sections[i]
+		for j in pinSections[s]:
+			pixels[j] = (colors[i])
+	pixels.show()
+
+#creates object 'gamepad' to store the data
+gamepadConnect = False
+while(not gamepadConnect):
+	light_all(255,0,0)
+	try:
+		gamepad = InputDevice('/dev/input/event0')
+		gamepadConnect = True
+		#prints out device info at start
+		print(gamepad)
+		#Change Light Color
+		pixelSections([topM,rightM,leftM],colorSets[cDir])
+	except:
+		print("No Gamepad Connected. Please turn it on!")
+		light_all(255,255,0)
+		time.sleep(0.5)
 
 try:
 	for event in gamepad.read_loop():
@@ -176,36 +196,38 @@ try:
 			if event.value == 1:
 				if event.code == start:
 					#E-Stop
-					#stopAll()
-					light_all(0,255,0)
+					stopAll()
 					print("Start")
 				elif event.code == select:
 					allowRotate = not allowRotate 
 					#Motor Reset?
-					light_all(0,0,255)
 					print("Select")
 				elif event.code == lTrig:
 					#Rotate Contact Left (Counterclock)
 					if allowRotate:
 						(topM,rightM,leftM) = rotateLeft(topM,rightM,leftM)
+						pixelSections([topM,rightM,leftM],colorSets[cDir])
 						allowRotate = False
 					print("Left Trigger")
 				elif event.code == rTrig:
 					#Rotate Contact Right (Clock)
 					if allowRotate:
 						(topM,rightM,leftM) = rotateRight(topM,rightM,leftM)
+						pixelSections([topM,rightM,leftM],colorSets[cDir])
 						allowRotate = False
 					print("Right Trigger")
 				elif event.code == yBtn:
 					#Turn Left
 					runMotorPattern([rightM,leftM,rightM,leftM],[1,1,-1,-1],[3,3,1,2])
 					(topM,rightM,leftM) = rotateRight(topM,rightM,leftM)
+					pixelSections([topM,rightM,leftM],colorSets[cDir])
 					print("Y")
 					lastPressed = "Y"
 				elif event.code == xBtn:
 					#Turn Right
 					runMotorPattern([leftM,rightM,leftM,rightM],[1,1,-1,-1],[3,3,1,2])
 					(topM,rightM,leftM) = rotateLeft(topM,rightM,leftM)
+					pixelSections([topM,rightM,leftM],colorSets[cDir])
 					print("X")
 					lastPressed = "X"
 				elif event.code == bBtn:
@@ -241,9 +263,12 @@ try:
 				elif event.value == down:
 					revRun = not revRun
 					if revRun:
+						cDir = 1
 						print("Motors Unwinding")
 					else:
+						cDir = 0
 						print("Motors Winding")
+					pixelSections([topM,rightM,leftM],colorSets[cDir])
 				elif event.value == middle:
 					stopAll()
 			elif event.code == x:	
