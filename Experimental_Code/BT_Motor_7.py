@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 import time, threading
-=======
-import time #, threading
->>>>>>> f6ecfeb29db0c993fbd7d465a202a3283db2c36d
 from evdev import InputDevice, categorize, ecodes
 import RPi.GPIO as GPIO
 import neopixel
@@ -69,21 +65,13 @@ IN2PWMS = [None for x in range(numMotors)]
 for i in range(numMotors):
 	pin = IN1PINS[i]
 	GPIO.setup(pin,GPIO.OUT)
-<<<<<<< HEAD
-	IN1PWMS[i] = GPIO.PWM(pin,10000)
-=======
 	IN1PWMS[i] = GPIO.PWM(pin,100)
->>>>>>> f6ecfeb29db0c993fbd7d465a202a3283db2c36d
 	IN1PWMS[i].start(0)
 	
 for i in range(numMotors):
 	pin = IN2PINS[i]
 	GPIO.setup(pin,GPIO.OUT)
-<<<<<<< HEAD
-	IN2PWMS[i] = GPIO.PWM(pin,10000)
-=======
 	IN2PWMS[i] = GPIO.PWM(pin,100)
->>>>>>> f6ecfeb29db0c993fbd7d465a202a3283db2c36d
 	IN2PWMS[i].start(0)
 	
 #button code variables as found for 8bitdo gamepad
@@ -131,18 +119,9 @@ revRun = False
 sleepTime = 0.5
 tTime = 0.5
 
-<<<<<<< HEAD
-motorTop = 0.8
+#Shows if motors are on or not
+motorOn = [False,False,False]
 
-#creates motor winding functions
-def motorControl(mNum,speed):
-	if speed*MDirs[mNum] >= 0:
-		IN1PWMS[mNum].ChangeDutyCycle(int(speed*spdMax*MDirs[mNum]*motorTop))
-		IN2PWMS[mNum].ChangeDutyCycle(0)
-	else:
-		IN1PWMS[mNum].ChangeDutyCycle(0)
-		IN2PWMS[mNum].ChangeDutyCycle(int(abs(speed*spdMax*MDirs[mNum]*motorTop)))
-=======
 #creates motor winding functions
 def motorControl(mNum,speed):
 	if speed*MDirs[mNum] >= 0:
@@ -151,20 +130,30 @@ def motorControl(mNum,speed):
 	else:
 		IN1PWMS[mNum].ChangeDutyCycle(0)
 		IN2PWMS[mNum].ChangeDutyCycle(int(abs(speed*spdMax*MDirs[mNum])))
->>>>>>> f6ecfeb29db0c993fbd7d465a202a3283db2c36d
 
 #Allows easier running of longer patterns
 def runMotorPattern(motors,speeds,delays):
 	for i in range(len(motors)):
-		motorControl(motors[i],speeds[i])
+		motorOn[motors[i]] = True
+		#speed up
+		for j in range(0,11,1):
+			motorControl(motors[i],j*speeds[i]/10)
+			time.sleep(0.025)
+			
 		time.sleep(sleepTime*delays[i])
 
 #stops all motors
 def stopAll():
-	motorControl(topM,0)
-	motorControl(rightM,0)
-	motorControl(leftM,0)
-
+	global motorOn
+	#slow to stop
+	for i in range(10,-1,-1):
+		for j in range(0,3):
+			if motorOn[j]:
+				motorControl(j,i/10)
+			time.sleep(0.025)
+			
+	motorOn = [False,False,False]
+	
 #Changes the direction of the motors to the right
 def rotateRight(topM,rightM,leftM):
 	tempM = topM
@@ -215,12 +204,9 @@ while(not gamepadConnect):
 		light_all(255,255,0)
 		time.sleep(0.5)
 
-<<<<<<< HEAD
 #t = threading.Timer(0.01,stopAll)
 #t.start()
 
-=======
->>>>>>> f6ecfeb29db0c993fbd7d465a202a3283db2c36d
 try:
 	for event in gamepad.read_loop():
 		if event.type == ecodes.EV_KEY:
@@ -249,22 +235,14 @@ try:
 					print("Right Trigger")
 				elif event.code == yBtn:
 					#Turn Left
-<<<<<<< HEAD
-					runMotorPattern([rightM,leftM,leftM,rightM,rightM,leftM],[1,1,0,0,-1,-1],[2,2,0,0.1,0.666,1.333])
-=======
-					runMotorPattern([rightM,leftM,rightM,leftM],[1,1,-1,-1],[3,3,1,2])
->>>>>>> f6ecfeb29db0c993fbd7d465a202a3283db2c36d
+					runMotorPattern([rightM,leftM,rightM,leftM],[1,1,-1,-1],[2,2,0.666,1.333])
 					(topM,rightM,leftM) = rotateRight(topM,rightM,leftM)
 					pixelSections([topM,rightM,leftM],colorSets[cDir])
 					print("Y")
 					lastPressed = "Y"
 				elif event.code == xBtn:
 					#Turn Right
-<<<<<<< HEAD
-					runMotorPattern([leftM,rightM,leftM,rightM,leftM,rightM],[1,1,0,0,-1,-1],[2,2,0,0.1,0.666,1.333])
-=======
-					runMotorPattern([leftM,rightM,leftM,rightM],[1,1,-1,-1],[3,3,1,2])
->>>>>>> f6ecfeb29db0c993fbd7d465a202a3283db2c36d
+					runMotorPattern([leftM,rightM,leftM,rightM],[1,1,-1,-1],[2,2,0.666,1.333])
 					(topM,rightM,leftM) = rotateLeft(topM,rightM,leftM)
 					pixelSections([topM,rightM,leftM],colorSets[cDir])
 					print("X")
@@ -277,15 +255,9 @@ try:
 				elif event.code == aBtn:
 					#Crunch
 					if not revRun:
-<<<<<<< HEAD
 						runMotorPattern([topM,rightM,leftM],[1,1,1],[0,0,1.5])
 					else:
 						runMotorPattern([topM,rightM,leftM],[-1,-1,-1],[0,0,1])
-=======
-						runMotorPattern([topM,rightM,leftM],[1,1,1],[0,0,1])
-					else:
-						runMotorPattern([topM,rightM,leftM],[-1,-1,-1],[0,0,0.75])
->>>>>>> f6ecfeb29db0c993fbd7d465a202a3283db2c36d
 					print("A")
 					lastPressed = "A"
 
@@ -300,14 +272,10 @@ try:
 				if event.value == up:
 					#Lift
 					if not revRun:
-						motorControl(topM,1)
+						runMotorPattern([topM],[1],[1])
 					else:
-						motorControl(topM,-1)
-<<<<<<< HEAD
-					#t = threading.Timer(tTime,stopAll)
-					#t.start()
-=======
->>>>>>> f6ecfeb29db0c993fbd7d465a202a3283db2c36d
+						runMotorPattern([topM],[-1],[1])
+					stopAll()
 					lastPressed = "up"
 					print("Up")
 				elif event.value == down:
@@ -321,43 +289,29 @@ try:
 					pixelSections([topM,rightM,leftM],colorSets[cDir])
 				elif event.value == middle:
 					stopAll()
-<<<<<<< HEAD
 					#t.cancel()
-=======
->>>>>>> f6ecfeb29db0c993fbd7d465a202a3283db2c36d
 			elif event.code == x:	
 				if event.value == left:
 					#Move Left
 					if not revRun:
-						motorControl(leftM,1)
+						runMotorPattern([leftM],[1],[1])
 					else:
-						motorControl(leftM,-1)
-<<<<<<< HEAD
-					#t = threading.Timer(tTime,stopAll)
-					#t.start()
-=======
->>>>>>> f6ecfeb29db0c993fbd7d465a202a3283db2c36d
+						runMotorPattern([leftM],[-1],[1])
+					stopAll()
 					lastPressed = "left"
 					print("Left")
 				elif event.value == right:
 					#Move Right
 					if not revRun:
-						motorControl(rightM,1)
+						runMotorPattern([rightM],[1],[1])
 					else:
-						motorControl(rightM,-1)
-<<<<<<< HEAD
-					#t = threading.Timer(tTime,stopAll)
-					#t.start()
-=======
->>>>>>> f6ecfeb29db0c993fbd7d465a202a3283db2c36d
+						runMotorPattern([rightM],[-1],[1])
+					stopAll()
 					lastPressed = "right"
 					print("Right")
 				elif event.value == middle:
 					stopAll()
-<<<<<<< HEAD
 					#t.cancel()
-=======
->>>>>>> f6ecfeb29db0c993fbd7d465a202a3283db2c36d
 		
 		if lastPressed not in ["None","up","left","right"]:
 			lastPressed = "None"

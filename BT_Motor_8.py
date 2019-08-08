@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 import time, threading
-=======
-import time #, threading
->>>>>>> f6ecfeb29db0c993fbd7d465a202a3283db2c36d
 from evdev import InputDevice, categorize, ecodes
 import RPi.GPIO as GPIO
 import neopixel
@@ -69,22 +65,20 @@ IN2PWMS = [None for x in range(numMotors)]
 for i in range(numMotors):
 	pin = IN1PINS[i]
 	GPIO.setup(pin,GPIO.OUT)
-<<<<<<< HEAD
-	IN1PWMS[i] = GPIO.PWM(pin,10000)
-=======
 	IN1PWMS[i] = GPIO.PWM(pin,100)
->>>>>>> f6ecfeb29db0c993fbd7d465a202a3283db2c36d
 	IN1PWMS[i].start(0)
 	
 for i in range(numMotors):
 	pin = IN2PINS[i]
 	GPIO.setup(pin,GPIO.OUT)
-<<<<<<< HEAD
-	IN2PWMS[i] = GPIO.PWM(pin,10000)
-=======
 	IN2PWMS[i] = GPIO.PWM(pin,100)
->>>>>>> f6ecfeb29db0c993fbd7d465a202a3283db2c36d
 	IN2PWMS[i].start(0)
+	
+driverPowerPins = [4,17]
+
+for d in driverPowerPins:
+	GPIO.setup(d,GPIO.OUT)
+	GPIO.output(d,True)
 	
 #button code variables as found for 8bitdo gamepad
 aBtn = 304
@@ -115,8 +109,8 @@ spdMax = 100 #32000
 
 #defines motor positions
 topM = 0
-rightM = 1
-leftM = 2
+rightM = 2
+leftM = 1
 
 MDirs = [1,1,1]
 
@@ -126,13 +120,20 @@ buttonDict = {yBtn:"Y",aBtn:"A",bBtn:"B",xBtn:"X"}
 
 constRun = True #Will not change
 allowRotate = False
+allowReboot = False
 revRun = False
 
 sleepTime = 0.5
 tTime = 0.5
 
-<<<<<<< HEAD
-motorTop = 0.8
+motorTop = 1
+
+def rebootMotors(amount):
+	for d in driverPowerPins:
+		GPIO.output(d,False)
+	time.sleep(amount)
+	for d in driverPowerPins:
+		GPIO.output(d,True)
 
 #creates motor winding functions
 def motorControl(mNum,speed):
@@ -142,23 +143,15 @@ def motorControl(mNum,speed):
 	else:
 		IN1PWMS[mNum].ChangeDutyCycle(0)
 		IN2PWMS[mNum].ChangeDutyCycle(int(abs(speed*spdMax*MDirs[mNum]*motorTop)))
-=======
-#creates motor winding functions
-def motorControl(mNum,speed):
-	if speed*MDirs[mNum] >= 0:
-		IN1PWMS[mNum].ChangeDutyCycle(int(speed*spdMax*MDirs[mNum]))
-		IN2PWMS[mNum].ChangeDutyCycle(0)
-	else:
-		IN1PWMS[mNum].ChangeDutyCycle(0)
-		IN2PWMS[mNum].ChangeDutyCycle(int(abs(speed*spdMax*MDirs[mNum])))
->>>>>>> f6ecfeb29db0c993fbd7d465a202a3283db2c36d
 
 #Allows easier running of longer patterns
 def runMotorPattern(motors,speeds,delays):
 	for i in range(len(motors)):
+		rebootMotors(0.1)
 		motorControl(motors[i],speeds[i])
+		print(motors[i],speeds[i])
 		time.sleep(sleepTime*delays[i])
-
+	
 #stops all motors
 def stopAll():
 	motorControl(topM,0)
@@ -215,22 +208,26 @@ while(not gamepadConnect):
 		light_all(255,255,0)
 		time.sleep(0.5)
 
-<<<<<<< HEAD
 #t = threading.Timer(0.01,stopAll)
 #t.start()
 
-=======
->>>>>>> f6ecfeb29db0c993fbd7d465a202a3283db2c36d
 try:
 	for event in gamepad.read_loop():
 		if event.type == ecodes.EV_KEY:
 			if event.value == 1:
 				if event.code == start:
 					#E-Stop
-					stopAll()
-					print("Start")
+					if allowReboot:
+						print("Start")
+						rebootMotors(0.5)
+						print("Rebooted")
+						allowReboot = False
+					else:
+						stopAll()
+						print("Start")
 				elif event.code == select:
-					allowRotate = not allowRotate 
+					allowRotate = not allowRotate
+					allowReboot = not allowReboot
 					#Motor Reset?
 					print("Select")
 				elif event.code == lTrig:
@@ -249,22 +246,14 @@ try:
 					print("Right Trigger")
 				elif event.code == yBtn:
 					#Turn Left
-<<<<<<< HEAD
-					runMotorPattern([rightM,leftM,leftM,rightM,rightM,leftM],[1,1,0,0,-1,-1],[2,2,0,0.1,0.666,1.333])
-=======
-					runMotorPattern([rightM,leftM,rightM,leftM],[1,1,-1,-1],[3,3,1,2])
->>>>>>> f6ecfeb29db0c993fbd7d465a202a3283db2c36d
+					runMotorPattern([rightM,leftM,rightM,leftM],[1,1,-1,-1],[2.5,2.5,1.5,1.5])
 					(topM,rightM,leftM) = rotateRight(topM,rightM,leftM)
 					pixelSections([topM,rightM,leftM],colorSets[cDir])
 					print("Y")
 					lastPressed = "Y"
 				elif event.code == xBtn:
 					#Turn Right
-<<<<<<< HEAD
-					runMotorPattern([leftM,rightM,leftM,rightM,leftM,rightM],[1,1,0,0,-1,-1],[2,2,0,0.1,0.666,1.333])
-=======
-					runMotorPattern([leftM,rightM,leftM,rightM],[1,1,-1,-1],[3,3,1,2])
->>>>>>> f6ecfeb29db0c993fbd7d465a202a3283db2c36d
+					runMotorPattern([leftM,rightM,leftM,rightM],[1,1,-1,-1],[2.5,2.5,1.5,1.5])
 					(topM,rightM,leftM) = rotateLeft(topM,rightM,leftM)
 					pixelSections([topM,rightM,leftM],colorSets[cDir])
 					print("X")
@@ -277,15 +266,9 @@ try:
 				elif event.code == aBtn:
 					#Crunch
 					if not revRun:
-<<<<<<< HEAD
 						runMotorPattern([topM,rightM,leftM],[1,1,1],[0,0,1.5])
 					else:
 						runMotorPattern([topM,rightM,leftM],[-1,-1,-1],[0,0,1])
-=======
-						runMotorPattern([topM,rightM,leftM],[1,1,1],[0,0,1])
-					else:
-						runMotorPattern([topM,rightM,leftM],[-1,-1,-1],[0,0,0.75])
->>>>>>> f6ecfeb29db0c993fbd7d465a202a3283db2c36d
 					print("A")
 					lastPressed = "A"
 
@@ -303,11 +286,8 @@ try:
 						motorControl(topM,1)
 					else:
 						motorControl(topM,-1)
-<<<<<<< HEAD
 					#t = threading.Timer(tTime,stopAll)
 					#t.start()
-=======
->>>>>>> f6ecfeb29db0c993fbd7d465a202a3283db2c36d
 					lastPressed = "up"
 					print("Up")
 				elif event.value == down:
@@ -321,10 +301,7 @@ try:
 					pixelSections([topM,rightM,leftM],colorSets[cDir])
 				elif event.value == middle:
 					stopAll()
-<<<<<<< HEAD
 					#t.cancel()
-=======
->>>>>>> f6ecfeb29db0c993fbd7d465a202a3283db2c36d
 			elif event.code == x:	
 				if event.value == left:
 					#Move Left
@@ -332,11 +309,8 @@ try:
 						motorControl(leftM,1)
 					else:
 						motorControl(leftM,-1)
-<<<<<<< HEAD
 					#t = threading.Timer(tTime,stopAll)
 					#t.start()
-=======
->>>>>>> f6ecfeb29db0c993fbd7d465a202a3283db2c36d
 					lastPressed = "left"
 					print("Left")
 				elif event.value == right:
@@ -345,19 +319,13 @@ try:
 						motorControl(rightM,1)
 					else:
 						motorControl(rightM,-1)
-<<<<<<< HEAD
 					#t = threading.Timer(tTime,stopAll)
 					#t.start()
-=======
->>>>>>> f6ecfeb29db0c993fbd7d465a202a3283db2c36d
 					lastPressed = "right"
 					print("Right")
 				elif event.value == middle:
 					stopAll()
-<<<<<<< HEAD
 					#t.cancel()
-=======
->>>>>>> f6ecfeb29db0c993fbd7d465a202a3283db2c36d
 		
 		if lastPressed not in ["None","up","left","right"]:
 			lastPressed = "None"
